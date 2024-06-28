@@ -28,7 +28,17 @@ router.get("/postListByUser", auth,
     post.postListByUserId);
 
 
+router.post("/commentListByPostId", auth,
+    [
+        body('postId').isMongoId().withMessage(message.INVALID_POST_ID)
+    ],
+    post.commentListByPostId);
 
+router.post("/likeList", auth,
+    [
+        body('postId').isMongoId().withMessage(message.INVALID_POST_ID)
+    ],
+    post.getLikeList);
 
 
 export default router;

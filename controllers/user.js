@@ -4,7 +4,6 @@ import message from "../helper/message.js";
 import statusCode from "../helper/httpStatusCode.js";
 import imageModel from "../models/image.js";
 import bcrypt from 'bcrypt';
-
 const saltRounds = 10;
 
 const send = services.setResponse;
@@ -22,7 +21,6 @@ class user {
    * @returns id
    */
   static addUser = async (req, res, next) => {
-    console.log("inside addUser")
     try {
       if (services.hasValidatorErrors(req, res)) {
         return;
@@ -60,9 +58,7 @@ class user {
       }
 
       const userData = await user.save();
-
       let saveImage = services.imageUploader(req.files.image, null, userData._id, "Profile");
-
 
       await imageModel.insertMany(saveImage);
 
@@ -110,7 +106,6 @@ class user {
       next(error);
     }
   }
-
 }
 
 export default user;

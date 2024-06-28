@@ -1,10 +1,7 @@
 import services from "../helper/services.js";
 import statusCode from "../helper/httpStatusCode.js";
 import message from "../helper/message.js";
-import { jwtDecode } from "jwt-decode";
 import userModel from "../models/user.js";
-import mongoose from "mongoose";
-
 
 const auth = async (req, res, next) => {
   try {

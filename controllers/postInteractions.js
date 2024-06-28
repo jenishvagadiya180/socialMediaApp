@@ -42,7 +42,7 @@ class postInteractions {
                     postId: req.body.postId,
                     likeBy: req.user._id
                 });
-                const postData = await post.save();
+                await post.save();
             } else {
                 let checkLike = await likeModel.findOne({
                     likeBy: req.user._id,
@@ -94,7 +94,7 @@ class postInteractions {
                 postId: req.body.postId,
                 likes: 0
             });
-            const commentData = await createComment.save();
+            await createComment.save();
 
             return send(res, statusCode.SUCCESSFUL, message.COMMENT_CREATED_SUCCESSFULLY, {
                 _id: createComment._id,
@@ -177,9 +177,7 @@ class postInteractions {
             }
             checkComment.isDeleted = true;
 
-            const updateReplyComment = await commentReplyModel.updateMany({ commentId: req.body.commentId, isDeleted: false }, { isDeleted: true });
-            console.log('updateReplyComment :>> ', updateReplyComment);
-
+            await commentReplyModel.updateMany({ commentId: req.body.commentId, isDeleted: false }, { isDeleted: true });
             await checkComment.save();
 
             return send(res, statusCode.SUCCESSFUL, message.COMMENT_DELETED_SUCCESSFULLY, null);
@@ -220,7 +218,7 @@ class postInteractions {
                 commentId: req.body.commentId,
                 likes: 0
             });
-            const createCommentReplyData = await createCommentReply.save();
+            await createCommentReply.save();
 
             return send(res, statusCode.SUCCESSFUL, message.COMMENT_REPLY_CREATED_SUCCESSFULLY, {
                 _id: createCommentReply._id,

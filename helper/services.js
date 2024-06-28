@@ -54,7 +54,6 @@ class services {
     }
 
     let saveImage = [];
-
     fs.mkdirSync(`./uploads/${id}/`, { recursive: true });
 
     image.forEach((index) => {
@@ -90,8 +89,6 @@ class services {
     };
     return responseData;
   }
-
-
 }
 
 export default services;

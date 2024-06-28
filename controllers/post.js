@@ -6,19 +6,19 @@ import imageModel from "../models/image.js"
 import postModel from "../models/post.js";
 import userModel from "../models/user.js";
 import mongoose from 'mongoose';
+import commentModel from "../models/comment.js";
+import likeModel from "../models/like.js";
 
 
 const send = services.setResponse;
 
 class post {
-
     /**
      * This function for createPost
      * @param {*} req.body.description         
      * @returns id
      */
     static createPost = async (req, res, next) => {
-
         try {
             if (services.hasValidatorErrors(req, res)) {
                 return;
@@ -90,6 +90,11 @@ class post {
         }
     };
 
+    /**
+   * This function for deletePost   
+   * @param {*} req.body.postId     
+   * @returns null
+   */
     static deletePost = async (req, res, next) => {
         try {
             if (services.hasValidatorErrors(req, res)) {
@@ -127,6 +132,12 @@ class post {
         }
     };
 
+
+    /**
+  * This function for postList   
+  * @param {*} req.user._id     
+  * @returns postData
+  */
     static postListByUserId = async (req, res, next) => {
         try {
             if (services.hasValidatorErrors(req, res)) {
@@ -145,118 +156,176 @@ class post {
                     }
                 },
                 {
-                    $unwind: {
-                        path: '$posts',
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
                     $lookup: {
-                        from: 'likes',
+                        from: 'images',
                         localField: 'posts._id',
                         foreignField: 'postId',
-                        as: 'posts.likes'
-                    }
-                },
-                {
-                    $unwind: {
-                        path: '$posts.images',
-                        preserveNullAndEmptyArrays: true
+                        as: 'postImage'
                     }
                 },
                 {
                     $lookup: {
                         from: 'images',
-                        localField: 'posts._id',
-                        foreignField: 'postId',
-                        as: 'posts.images'
+                        localField: '_id',
+                        foreignField: 'userId',
+                        as: 'profileImage'
                     }
                 },
                 {
-                    $unwind: {
-                        path: '$posts.images',
-                        preserveNullAndEmptyArrays: true
+                    $project: {
+                        userName: 1,
+                        name: 1,
+                        bio: 1,
+                        postImage: { $concat: [process.env.BASE_URL, { $arrayElemAt: ["$postImage.url", 0] }] },
+                        postImageId: { $arrayElemAt: ["$postImage._id", 0] },
+                        description: { $arrayElemAt: ["$posts.description", 0] },
+                        profileImage: { $concat: [process.env.BASE_URL, { $arrayElemAt: ["$profileImage.url", 0] }] }
                     }
-                },
-                {
-                    $lookup: {
-                        from: 'comments',
-                        localField: 'posts._id',
-                        foreignField: 'postId',
-                        as: 'posts.comments'
-                    }
-                },
-                {
-                    $unwind: {
-                        path: '$posts.comments',
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'commentreplies',
-                        localField: 'posts.comments._id',
-                        foreignField: 'commentId',
-                        as: 'posts.comments.commentReplies'
-                    }
-                },
-                // {
-                //     $group: {
-                //         _id: {
-                //             userId: '$_id',
-                //             postId: '$posts._id',
-                //             commentId: '$posts.comments._id'
-                //         },
-                //         userName: { $first: '$userName' },
-                //         name: { $first: '$name' },
-                //         email: { $first: '$email' },
-                //         postImages: { $first: '$posts.images' },
-                //         postComments: {
-                //             $push: {
-                //                 _id: '$posts.comments._id',
-                //                 comment: '$posts.comments.comment',
-                //                 commentReplies: '$posts.comments.commentReplies'
-                //             }
-                //         }
-                //     }
-                // },
-                // {
-                //     $group: {
-                //         _id: '$_id.userId',
-                //         userName: { $first: '$userName' },
-                //         name: { $first: '$name' },
-                //         email: { $first: '$email' },
-                //         posts: {
-                //             $push: {
-                //                 _id: '$_id.postId',
-                //                 images: '$postImages',
-                //                 comments: '$postComments'
-                //             }
-                //         }
-                //     }
-                // },
-                // {
-                //     $project: {
-                //         _id: 1,
-                //         userName: 1,
-                //         name: 1,
-                //         email: 1,
-                //         posts: 1
-                //     }
-                // }
+                }
             ]);
 
             console.log(JSON.stringify(postList, null, 2));
-
-            console.log(JSON.stringify(postList, null, 2));
-
-
 
             return send(
                 res,
                 statusCode.SUCCESSFUL,
                 message.SUCCESSFUL,
                 postList
+            );
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+* This function for commentListByPostId   
+* @param {*} req.body.postId     
+* @returns commentList
+*/
+    static commentListByPostId = async (req, res, next) => {
+        console.log("inside clps")
+        try {
+            if (services.hasValidatorErrors(req, res)) {
+                return;
+            }
+            const commentList = await commentModel.aggregate([
+                {
+                    $match: { postId: new mongoose.Types.ObjectId(req.body.postId) }
+                },
+                {
+                    $lookup: {
+                        from: "commentreplies",
+                        let: {
+                            id: '$_id'
+                        },
+                        pipeline: [{
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$commentId", "$$id",] },
+                                    ]
+                                }
+                            },
+                        }, {
+                            $lookup: {
+                                from: "users",
+                                let: {
+                                    id: '$replyBy'
+                                },
+                                pipeline: [{
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ["$_id", "$$id",] },
+                                            ]
+                                        }
+                                    },
+                                }],
+                                as: "userData"
+                            }
+                        }, {
+                            $project: {
+                                _id: 1,
+                                likes: 1,
+                                reply: 1,
+                                userName: { $arrayElemAt: ['$userData.userName', 0] },
+                            }
+                        }],
+                        as: "replyCommentData"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'commentBy',
+                        foreignField: '_id',
+                        as: 'commentByUser'
+                    }
+                },
+                {
+                    $project: {
+                        postId: 1,
+                        comment: 1,
+                        likes: 1,
+                        userName: { $arrayElemAt: ['$commentByUser.userName', 0] },
+                        replyCommentData: 1
+                    }
+                }
+            ]);
+
+            console.log(JSON.stringify(commentList, null, 2));
+
+            return send(
+                res,
+                statusCode.SUCCESSFUL,
+                message.SUCCESSFUL,
+                commentList
+            );
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+* This function for getLikeList   
+* @param {*} req.body.postId     
+* @returns getLikeList
+*/
+    static getLikeList = async (req, res, next) => {
+        try {
+            if (services.hasValidatorErrors(req, res)) {
+                return;
+            }
+            const likeList = await likeModel.aggregate([
+                {
+                    $match: { postId: new mongoose.Types.ObjectId(req.body.postId) }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userData'
+                    }
+                },
+                {
+                    $project: {
+                        postId: 1,
+                        likeBy: 1,
+                        bio: 1,
+                        userName: { $arrayElemAt: ["$userData.userName", 0] },
+
+                    }
+                }
+            ]);
+
+            console.log(JSON.stringify(likeList, null, 2));
+
+            return send(
+                res,
+                statusCode.SUCCESSFUL,
+                message.SUCCESSFUL,
+                { likeData: likeList, likeCount: likeList.length }
             );
         } catch (error) {
             next(error);
