@@ -203,7 +203,6 @@ class post {
 * @returns commentList
 */
     static commentListByPostId = async (req, res, next) => {
-        console.log("inside clps")
         try {
             if (services.hasValidatorErrors(req, res)) {
                 return;
@@ -318,8 +317,6 @@ class post {
                     }
                 }
             ]);
-
-            console.log(JSON.stringify(likeList, null, 2));
 
             return send(
                 res,
