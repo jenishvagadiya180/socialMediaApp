@@ -14,6 +14,7 @@ const port = process.env.PORT;
 //Database Connection
 connectDatabase();
 
+app.use("/uploads", express.static('uploads'));
 app.use(express.json())
 app.use(fileUpload());
 app.use("/user", user);

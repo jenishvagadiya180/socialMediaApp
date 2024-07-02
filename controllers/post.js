@@ -172,6 +172,14 @@ class post {
                     }
                 },
                 {
+                    $lookup: {
+                        from: 'likes',
+                        localField: 'posts._id',
+                        foreignField: 'postId',
+                        as: 'postLikes'
+                    }
+                },
+                {
                     $project: {
                         userName: 1,
                         name: 1,
@@ -179,7 +187,8 @@ class post {
                         postImage: { $concat: [process.env.BASE_URL, { $arrayElemAt: ["$postImage.url", 0] }] },
                         postImageId: { $arrayElemAt: ["$postImage._id", 0] },
                         description: { $arrayElemAt: ["$posts.description", 0] },
-                        profileImage: { $concat: [process.env.BASE_URL, { $arrayElemAt: ["$profileImage.url", 0] }] }
+                        profileImage: { $concat: [process.env.BASE_URL, { $arrayElemAt: ["$profileImage.url", 0] }] },
+                        likes: { $size: '$postLikes' },
                     }
                 }
             ]);
@@ -333,3 +342,5 @@ class post {
 }
 
 export default post;
+
+
